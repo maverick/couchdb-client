@@ -4,7 +4,7 @@ package CouchDB::Client;
 use strict;
 use warnings;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use JSON::Any       qw(XS JSON DWIW);
 use LWP::UserAgent  qw();
@@ -195,6 +195,7 @@ Gets a path and returns the complete URI.
 =head1 AUTHOR
 
 Robin Berjon, <robin @t berjon d.t com>
+Maverick Edwards (current maintainer) <medwards @t nasba d.t org>
 
 =head1 BUGS 
 

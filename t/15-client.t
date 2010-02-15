@@ -21,7 +21,7 @@ if($cdb->testConnection) {
         plan skip_all => "Requires CouchDB version 0.8.0 or better; running $v";
     }
     else {
-        plan tests => 63;
+        plan tests => 64;
     }
 }
 else {
@@ -126,16 +126,7 @@ ok $DB, 'DB create';
     
 }
 
-# list Docs
-{
-    my $docs = $DB->listDocs;
-    ok ref($docs) eq 'ARRAY', 'listDocs at least returns a list of something';
-    my $docs2 = $DB->listDocIdRevs;
-    ok ref($docs2) eq 'ARRAY', 'listDocIdRevs at least returns a list of something';
-    ok @$docs == @$docs2, 'listDocIdRevs and listDocs return the same number of items';
-}
-
-# new Doc & exists
+# new Doc, list and exists
 {
     $docName = docName();
     my $doc = $DB->newDoc($docName);
@@ -147,6 +138,14 @@ ok $DB, 'DB create';
         ok $DB->docExists($docName), 'docExists sees an existing Doc';
         ok !$DB->docExists($docName . '-NOT-EXISTS'), 'docExists does not see a non-extant Doc';
     }
+
+    my $docs2 = $DB->listDocs;
+    ok ref($docs2) eq 'ARRAY', 'listDocs at least returns a list of something';
+    my $docs3 = $DB->listDocIdRevs;
+    ok ref($docs3) eq 'ARRAY', 'listDocIdRevs at least returns a list of something';
+	ok defined($docs3->[0]->{rev}), "listDocIdRevs doesn't have undef for the rev value";
+    ok @$docs2 == @$docs3, 'listDocIdRevs and listDocs return the same number of items';
+
     eval { $doc->delete; };
 }
 
@@ -198,7 +197,7 @@ ok $DOC && !$@, 'Doc created';
     my $oldRev = $DOC->rev;
     $DOC->update;
     ok $DOC->id eq $docName, 'ID is stable after update';
-    ok $DOC->rev != $oldRev, 'Rev changes on update';
+    ok $DOC->rev ne $oldRev, 'Rev changes on update';
     ok $DOC->data->{foo} eq 'bar', 'Update maintains data';
 }
 
@@ -303,7 +302,7 @@ ok $res && @{$res->{rows}} == 1, "bulk was deleted";
 {
     my $ri = $DOC->revisionsInfo;
     ok $ri && @$ri == 3, "Revision info ok";
-    ok $ri->[0]->{status} eq 'available' && $ri->[0]->{rev} == $DOC->rev, "revisions are good";
+    ok $ri->[0]->{status} eq 'available' && $ri->[0]->{rev} eq $DOC->rev, "revisions are good";
     ok $DOC->retrieveFromRev($ri->[1]->{rev}), "old version ok";
 }
 

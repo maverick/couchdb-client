@@ -42,8 +42,30 @@ sub queryView {
     confess("No such view: '$view'") unless exists $self->views->{$view};
     my $sn = $self->id;
     $sn =~ s{^_design/}{};
+
+    # The uri path for views changed and the parameter "count" has been renamed "limit" 
+    # between v0.8 and v0.9 and above.  (issue #48407 and #49759 in RT)
+    my ($M,$m,undef) = split(/\./,$self->{db}->{client}->serverInfo()->{version});
+
+    my $vp;
+    if ($M > 0 || ($M == 0 && $m >= 9)) {
+        $vp = "_design/$sn/_view/$view";
+        if (defined($args{count})) {
+            $args{limit} = $args{count};
+            delete $args{count};
+        }
+    }
+    else {
+        $vp = "_view/$sn/$view";
+        if (defined($args{limit})) {
+            $args{count} = $args{limit};
+            delete $args{limit};
+        }
+    }
+
     my $qs = %args ? $self->{db}->argsToQuery(%args) : '';
-    my $res = $self->{db}->{client}->req('GET', $self->{db}->uriName . "_view/$sn/$view" . $qs);
+
+    my $res = $self->{db}->{client}->req('GET', $self->{db}->uriName . $vp . $qs);
     confess("Connection error: $res->{msg}") unless $res->{success};
     return $res->{json};
 }

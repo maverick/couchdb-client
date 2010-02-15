@@ -73,7 +73,15 @@ sub listDocIdRevs {
     my $qs = %args ? $self->argsToQuery(%args) : '';
     my $res = $self->{client}->req('GET', $self->uriName . '_all_docs' . $qs);
     confess("Connection error: $res->{msg}") unless $res->{success};
-    return [map { { id => $_->{id}, rev => $_->{value}->{_rev} } } @{$res->{json}->{rows}}];
+    return [
+		map { 
+			{
+				id  => $_->{id}, 
+				rev => ($_->{value}->{rev})? # The correct key may be version specific; 
+					$_->{value}->{rev}:      # v0.10.1 returns rev under this key,
+					$_->{value}->{_rev}      # older versions may return it here.
+			}
+		} @{$res->{json}->{rows}}];
 }
 
 sub listDocs {
@@ -143,7 +151,11 @@ sub bulkStore {
     my $res = $self->{client}->req('POST', $self->uriName . '_bulk_docs', $json);
     confess("Connection error: $res->{msg}") unless $res->{success};
     my $i = 0;
-    for my $ok (@{$res->{json}->{new_revs}}) {
+
+    # versions prior to 0.9 returned the results under the new_revs key,
+    # newer versions just return an array.
+	my $list = (ref($res->{json}) eq "ARRAY")?$res->{json}:$res->{json}->{new_revs};
+    for my $ok (@{$list}) {
         my $doc = $docs->[$i];
         $doc->{id} = $ok->{id} unless $doc->{id};
         $doc->{rev} = $ok->{rev};
@@ -159,7 +171,11 @@ sub bulkDelete {
     my $res = $self->{client}->req('POST', $self->uriName . '_bulk_docs', $json);
     confess("Connection error: $res->{msg}") unless $res->{success};
     my $i = 0;
-    for my $ok (@{$res->{json}->{new_revs}}) {
+
+    # versions prior to 0.9 returned the results under the new_revs key,
+    # newer versions just return an array.
+	my $list = (ref($res->{json}) eq "ARRAY")?$res->{json}:$res->{json}->{new_revs};
+    for my $ok (@{$list}) {
         my $doc = $docs->[$i];
         $doc->{deletion_stub_rev} = $ok->{rev};
         $doc->{rev} = '';

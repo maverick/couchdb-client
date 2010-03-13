@@ -5,6 +5,7 @@ name 'CouchDB-Client';
 perl_version '5.006';
 license 'perl';
 all_from 'lib/CouchDB/Client.pm';
+author 'Maverick Edwards <maverick @t smurfbane d.t org>';
 
 requires 'JSON::Any' => '1.17';
 requires 'LWP::UserAgent';

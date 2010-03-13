@@ -195,7 +195,7 @@ Gets a path and returns the complete URI.
 =head1 AUTHOR
 
 Robin Berjon, <robin @t berjon d.t com>
-Maverick Edwards (current maintainer) <medwards @t nasba d.t org>
+Maverick Edwards, <maverick @t smurfbane d.t org> (current maintainer)
 
 =head1 BUGS 
 

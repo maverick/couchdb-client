@@ -21,7 +21,7 @@ if($cdb->testConnection) {
         plan skip_all => "Requires CouchDB version 0.8.0 or better; running $v";
     }
     else {
-        plan tests => 67;
+        plan tests => 70;
     }
 }
 else {
@@ -221,10 +221,20 @@ ok $DOC && !$@, 'Doc created';
 
     delete $DOC->attachments->{'page.html'};
     $DOC->update;
-    ok keys %{$DOC->attachments} && keys %{$DOC->attachments} == 1, 'Attachments was deleted';
+    ok keys %{$DOC->attachments} && keys %{$DOC->attachments} == 1, 'Attachment 2 was deleted (using attachments accessor)';
     ok $DOC->fetchAttachment('dahut.txt') eq 'Dahuts will rule the world!', "Attachment 1 still there";
     eval { $DOC->fetchAttachment('page.html'); };
-    ok $@, 'Second attachmet not returned';
+    ok $@, 'Attachment 2 no longer returned';
+
+	eval { $DOC->deleteAttachment('page.html'); };
+	ok $@, 'Attachment 2 not deletable again';
+
+    $DOC->deleteAttachment('dahut.txt');
+	$DOC->update;
+    ok keys %{$DOC->attachments} == 0, 'Attachment 1 was deleted (using delete method)';
+    eval { $DOC->fetchAttachment('dahut.txt'); };
+    ok $@, 'Attachment 1 no longer returned';
+
 }
 
 ### --- DESIGN DOC TESTS --------------------------------------------------------- ###
@@ -308,7 +318,7 @@ ok $res && @{$res->{rows}} == 1, "bulk was deleted";
 ### --- DOC REVISIONS --------------------------------------------------------- ###
 {
     my $ri = $DOC->revisionsInfo;
-    ok $ri && @$ri == 4, "Revision info ok";
+    ok $ri && @$ri == 5, "Revision info ok";
     ok $ri->[0]->{status} eq 'available' && $ri->[0]->{rev} eq $DOC->rev, "revisions are good";
     ok $DOC->retrieveFromRev($ri->[1]->{rev}), "old version ok";
 }

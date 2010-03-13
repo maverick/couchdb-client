@@ -181,6 +181,15 @@ sub addAttachment {
     return $self;
 }
 
+sub deleteAttachment {
+    my $self = shift;
+    my $attName = shift;
+    
+    confess("No such attachment: '$attName'") unless exists $self->{attachments}->{$attName};
+	delete $self->{attachments}->{$attName};
+	return $self;
+}
+
 sub toBase64 {
     my $self = shift;
     my $data = shift;
@@ -310,6 +319,13 @@ Adds an attachment to the document with a given name, MIME media type, and data.
 data is the original, not the Base64 version which is handled internally. The object
 is returned.
 
+=item deleteAttachment $NAME
+
+Deletes an attachment from the document.  Note that this only removes the attachment 
+on the client side, you have to update the object for it to be removed from the DB.
+
+Throws an exception if the document does not contain an attachment by that name.
+
 =item toBase64 $DATA
 
 A simple helper that returns data in Base64 of a form acceptable to CouchDB (on a single
@@ -338,6 +354,7 @@ would be good.
 =head1 AUTHOR
 
 Robin Berjon, <robin @t berjon d.t com>
+Maverick Edwards, <maverick @t smurfbane d.t org> (current maintainer)
 
 =head1 BUGS 
 

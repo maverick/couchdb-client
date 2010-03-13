@@ -136,6 +136,7 @@ resultset.
 =head1 AUTHOR
 
 Robin Berjon, <robin @t berjon d.t com>
+Maverick Edwards, <maverick @t smurfbane d.t org> (current maintainer)
 
 =head1 BUGS 
 

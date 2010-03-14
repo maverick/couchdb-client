@@ -1,0 +1,17 @@
+0.06 - Not yet released
+=================
+Added Changes file
+
+Added deleteAttachment method to CouchDB::Client::Doc
+
+Added replicate method to CouchDB::Client::DB
+
+
+0.05 - 2010-02-15
+=================
+Maverick takes over maintenance from Robin, who no longer has time to devote to
+this module.
+
+Fixed issues #48407 and #49759 - API change between version 0.8 and 0.9 of CouchDB
+
+CouchDB::Client::DB->listDocIdRevs works correctly against CouchDB version 0.10

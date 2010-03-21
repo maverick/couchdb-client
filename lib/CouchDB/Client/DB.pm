@@ -58,6 +58,47 @@ sub delete {
     confess("Connection error: $res->{msg}");
 }
 
+sub replicate {
+	my $self = shift;
+	my %args = @_;
+
+	my $name = $self->{name};
+	$name =~ s/\/$//;
+
+	my $json;
+	if (defined($args{source}) && defined($args{target})) {
+		confess("Source and target can't be used at the sametime.");
+	}
+	elsif (defined($args{source})) {
+		$json->{source} = $args{source};  # pull replication
+		$json->{target} = $name;
+	}
+	elsif (defined($args{'target'})) {
+		$json->{source} = $name;          # push replication
+		$json->{target} = $args{target};
+	}
+	else {
+		confess("Either source or target is required.");
+	}
+
+	my @flags = ('continuous');
+
+    my ($M,$m,undef) = split(/\./,$self->{client}->serverInfo()->{version});
+	if ($m > 10) {
+		# This flag was added after v0.10
+		push(@flags,'create_target');
+	}
+
+	foreach (@flags) {
+		$json->{$_} = (defined($args{$_}) && $args{$_})?$self->{client}->{json}->true:$self->{client}->{json}->false;
+	}
+
+    my $res = $self->{client}->req('POST','_replicate',$json);
+	confess("Error replicating database: $res->{msg}") if $res->{status} >= 300;
+
+	return $res->{json};
+}
+
 sub newDoc {
     my $self = shift;
     my $id = shift;
@@ -143,7 +184,6 @@ sub tempView {
     confess("Connection error: $res->{msg}");
 }
 
-use Data::Dumper;
 sub bulkStore {
     my $self = shift;
     my $docs = shift;
@@ -303,6 +343,21 @@ Throws an exception if it already exists, or for connection problems.
 
 Deletes the database. Returns true on success. Throws an exception if
 the DB can't be found, or for connection problems.
+
+=item replicate %ARGS
+
+Sets up replication between two databases.  Setting C<target> to a database url (either local or remote) 
+replicates this database into one specified by the url.  Conversely, setting C<source> to a database url 
+replicates that database into the current one.  In CouchDB terminology, C<target> and C<source>, respectively,
+set up "push" and "pull" replication.
+
+Either C<target> or C<source> is required; both can't be used at the same time.
+
+By default, replication is a one time event.  New modifications to the origin database do not automatically
+appear in the replicated database.  Setting C<continuous> to a true value will cause new changes in
+the origin database to be reflected in the replicated one.
+
+Note: Support for the C<create_target> flag (which was added after version 0.10) is included, but untested.
 
 =item newDoc $ID?, $REV?, $DATA?, $ATTACHMENTS?
 

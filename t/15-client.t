@@ -3,7 +3,6 @@
 use strict;
 use warnings;
 use Test::More;
-use Data::Dumper;
 
 use CouchDB::Client qw();
 
@@ -12,6 +11,7 @@ my $cdb = CouchDB::Client->new( uri => $ENV{COUCHDB_CLIENT_URI} || 'http://local
 # CONFIG
 my $dbName = 'test-perl-couchdb-client/';
 my $dbNameNot = 'test-perl-couchdb-client-NOT-EXISTS/';
+my $dbNameReplicated = 'test-perl-couchdb-client-replicated';
 my $baseDocName = 'TEST-DOC';
 
 if($cdb->testConnection) {
@@ -21,7 +21,7 @@ if($cdb->testConnection) {
         plan skip_all => "Requires CouchDB version 0.8.0 or better; running $v";
     }
     else {
-        plan tests => 70;
+        plan tests => 77;
     }
 }
 else {
@@ -174,7 +174,6 @@ ok $DB, 'DB create';
     eval { $doc->delete; };
 }
 
-
 ### --- DOC TESTS --------------------------------------------------------------- ###
 
 # create
@@ -324,9 +323,53 @@ ok $res && @{$res->{rows}} == 1, "bulk was deleted";
 }
 
 
+my $REP_DB;
+### --- DB REPLICATION --------------------------------------------------------- ###
+{
+	eval { $DB->replicate('target' => 'foo', 'source' => 'bar'); };
+	ok $@, "Invalid replicate() params 1";
+
+	eval { $DB->replicate(); };
+	ok $@, "Invalid replicate() params 2";
+
+    $REP_DB = $cdb->newDB($dbNameReplicated);
+    eval { $REP_DB->delete; };
+    eval { $REP_DB->create; };
+	SKIP: {
+		skip("Issue creating replication db: $@", 5) if $@;
+
+		my $doc = $DB->newDoc('test_doc');
+		$doc->data->{field} = 'value';
+		$doc->create;
+
+		eval { $DB->replicate('target' => $dbNameReplicated); };
+		ok !$@,"replication successful";
+
+		my $rep_doc = $REP_DB->newDoc('test_doc');
+		eval {$rep_doc->retrieve};
+		ok !$@, "retrieve replicated doc";
+
+		$doc->data->{field2} = 'updated';
+		$doc->update;
+
+		eval {$rep_doc->retrieve};
+		ok !defined($rep_doc->data->{field2}), "updating the original doesn't change the replicated on";
+
+		eval { $DB->replicate('target' => $dbNameReplicated, 'continuous' => 1); };
+		ok !$@,"updated replication to continuous mode";
+		
+		$doc->data->{field3} = 'updated again';
+		$doc->update;
+
+		eval {$rep_doc->retrieve};
+		ok $rep_doc->data->{field3} eq "updated again" , "updating the original changes the replicated one";
+	}
+}
+
 ### --- THE CLEANUP AT THE END
 
 $DD->delete;
 $DOC->delete;
 $DB->delete;
+$REP_DB->delete;
 

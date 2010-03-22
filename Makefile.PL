@@ -7,7 +7,7 @@ license 'perl';
 all_from 'lib/CouchDB/Client.pm';
 
 # override the default author detection behavior
-author 'Maverick Edwards <maverick @t smurfbane d.t org>';	
+author 'Maverick Edwards <maverick @t smurfbane d.t org>';
 resources 'repository' => 'git://github.com/maverick/couchdb-client.git';
 resources 'homepage'   => 'http://github.com/maverick/couchdb-client';
 
@@ -19,13 +19,13 @@ requires 'MIME::Base64';
 
 # we need a JSON module that isn't Syck (no UTF-8 support makes it useless)
 sub check_json () {
-    my @order = qw(XS JSON DWIW);
-    foreach my $testmod (@order) {
-        $testmod = "JSON::$testmod" unless $testmod eq "JSON";
-        eval "require $testmod";
-        return unless $@;
-    }
-    requires 'JSON' => '2.02';
+	my @order = qw(XS JSON DWIW);
+	foreach my $testmod (@order) {
+		$testmod = "JSON::$testmod" unless $testmod eq "JSON";
+		eval "require $testmod";
+		return unless $@;
+	}
+	requires 'JSON' => '2.02';
 }
 check_json();
 

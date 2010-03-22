@@ -15,93 +15,93 @@ use Carp            qw(confess);
 use CouchDB::Client::DB;
 
 sub new {
-    my $class = shift;
-    my %opt = @_ == 1 ? %{$_[0]} : @_;
-    
-    my %self;
-    if ($opt{uri}) {
-        $self{uri} = $opt{uri};
-        $self{uri} .= '/' unless $self{uri} =~ m{/$};
-    }
-    else {
-        $self{uri} = ($opt{scheme} || 'http')      . '://' .
-                     ($opt{host}   || 'localhost') . ':'   .
-                     ($opt{port}   || '5984')      . '/';
-    }
-    $self{json} = ($opt{json} || JSON::Any->new(utf8 => 1, allow_blessed => 1));
-    $self{ua}   = ($opt{ua}   || LWP::UserAgent->new(agent => "CouchDB::Client/$VERSION"));
-    
-    return bless \%self, $class;
+	my $class = shift;
+	my %opt = @_ == 1 ? %{$_[0]} : @_;
+
+	my %self;
+	if ($opt{uri}) {
+		$self{uri} = $opt{uri};
+		$self{uri} .= '/' unless $self{uri} =~ m{/$};
+	}
+	else {
+		$self{uri} = ($opt{scheme} || 'http')      . '://' .
+					 ($opt{host}   || 'localhost') . ':'   .
+					 ($opt{port}   || '5984')      . '/';
+	}
+	$self{json} = ($opt{json} || JSON::Any->new(utf8 => 1, allow_blessed => 1));
+	$self{ua}   = ($opt{ua}   || LWP::UserAgent->new(agent => "CouchDB::Client/$VERSION"));
+
+	return bless \%self, $class;
 }
 
 sub testConnection {
-    my $self = shift;
-    eval { $self->serverInfo; };
-    return 0 if $@;
-    return 1;
+	my $self = shift;
+	eval { $self->serverInfo; };
+	return 0 if $@;
+	return 1;
 }
 
 sub serverInfo {
-    my $self = shift;
-    my $res = $self->req('GET');
-    return $res->{json} if $res->{success};
-    confess("Connection error: $res->{msg}");
+	my $self = shift;
+	my $res = $self->req('GET');
+	return $res->{json} if $res->{success};
+	confess("Connection error: $res->{msg}");
 }
 
 sub newDB {
-    my $self = shift;
-    my $name = shift;
-    return CouchDB::Client::DB->new(name => $name, client => $self);
+	my $self = shift;
+	my $name = shift;
+	return CouchDB::Client::DB->new(name => $name, client => $self);
 }
 
 sub listDBNames {
-    my $self = shift;
-    my $res = $self->req('GET', '_all_dbs');
-    return $res->{json} if $res->{success};
-    confess("Connection error: $res->{msg}");
+	my $self = shift;
+	my $res = $self->req('GET', '_all_dbs');
+	return $res->{json} if $res->{success};
+	confess("Connection error: $res->{msg}");
 }
 
 sub listDBs {
-    my $self = shift;
-    return [ map { $self->newDB($_) } @{$self->listDBNames} ];
+	my $self = shift;
+	return [ map { $self->newDB($_) } @{$self->listDBNames} ];
 }
 
 sub dbExists {
-    my $self = shift;
-    my $name = shift;
-    $name =~ s{/$}{};
-    return (grep { $_ eq $name } @{$self->listDBNames}) ? 1 : 0;
+	my $self = shift;
+	my $name = shift;
+	$name =~ s{/$}{};
+	return (grep { $_ eq $name } @{$self->listDBNames}) ? 1 : 0;
 }
 
 # --- CONNECTION HANDLING ---
 sub req {
-    my $self = shift;
-    my $meth = shift;
-    my $path = shift;
-    my $content = shift;
-    
-    if (ref $content) {
-        $content = encode('utf-8', $self->{json}->encode($content));
-    }
-    my $res = $self->{ua}->request( HTTP::Request->new($meth, $self->uriForPath($path), undef, $content) );
-    my $ret = {
-        status  => $res->code,
-        msg     => $res->status_line,
-        success => 0,
-    };
-    if ($res->is_success) {
-        $ret->{success} = 1;
-        $ret->{json} = $self->{json}->decode($res->content);
-    }
-    return $ret;
+	my $self = shift;
+	my $meth = shift;
+	my $path = shift;
+	my $content = shift;
+
+	if (ref $content) {
+		$content = encode('utf-8', $self->{json}->encode($content));
+	}
+	my $res = $self->{ua}->request( HTTP::Request->new($meth, $self->uriForPath($path), undef, $content) );
+	my $ret = {
+		status  => $res->code,
+		msg     => $res->status_line,
+		success => 0,
+	};
+	if ($res->is_success) {
+		$ret->{success} = 1;
+		$ret->{json} = $self->{json}->decode($res->content);
+	}
+	return $ret;
 }
 
 
 # --- HELPERS ---
 sub uriForPath {
-    my $self = shift;
-    my $path = shift() || '';
-    return $self->{uri} . $path;
+	my $self = shift;
+	my $path = shift() || '';
+	return $self->{uri} . $path;
 }
 
 
@@ -115,16 +115,16 @@ CouchDB::Client - Simple, correct client for CouchDB
 
 =head1 SYNOPSIS
 
-    use CouchDB::Client;
-    my $c = CouchDB::Client->new(uri => 'https://dbserver:5984/');
-    $c->testConnection or die "The server cannot be reached";
-    print "Running version " . $c->serverInfo->{version} . "\n";
-    my $db = $c->newDB('my-stuff')->create;
-    
-    # listing databases
-    $c->listDBs;
-    $c->listDBNames;
-    
+	use CouchDB::Client;
+	my $c = CouchDB::Client->new(uri => 'https://dbserver:5984/');
+	$c->testConnection or die "The server cannot be reached";
+	print "Running version " . $c->serverInfo->{version} . "\n";
+	my $db = $c->newDB('my-stuff')->create;
+
+	# listing databases
+	$c->listDBs;
+	$c->listDBNames;
+
 
 =head1 DESCRIPTION
 
@@ -197,17 +197,17 @@ Gets a path and returns the complete URI.
 Robin Berjon, <robin @t berjon d.t com>
 Maverick Edwards, <maverick @t smurfbane d.t org> (current maintainer)
 
-=head1 BUGS 
+=head1 BUGS
 
 Please report any bugs or feature requests to bug-couchdb-client at rt.cpan.org, or through the
 web interface at http://rt.cpan.org/NoAuth/ReportBug.html?Queue=CouchDB-Client.
 
-=head1 COPYRIGHT & LICENSE 
+=head1 COPYRIGHT & LICENSE
 
 Copyright 2008 Robin Berjon, all rights reserved.
 
-This library is free software; you can redistribute it and/or modify it under the same terms as 
-Perl itself, either Perl version 5.8.8 or, at your option, any later version of Perl 5 you may 
+This library is free software; you can redistribute it and/or modify it under the same terms as
+Perl itself, either Perl version 5.8.8 or, at your option, any later version of Perl 5 you may
 have available.
 
 =cut

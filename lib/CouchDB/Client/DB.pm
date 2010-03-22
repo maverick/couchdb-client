@@ -12,50 +12,50 @@ use CouchDB::Client::Doc;
 use CouchDB::Client::DesignDoc;
 
 sub new {
-    my $class = shift;
-    my %opt = @_ == 1 ? %{$_[0]} : @_;
+	my $class = shift;
+	my %opt = @_ == 1 ? %{$_[0]} : @_;
 
-    $opt{name}   || confess "CouchDB database requires a name.";
-    $opt{client} || confess "CouchDB database requires a client.";
-    $opt{name} .= '/' unless $opt{name} =~ m{/$};
-    
-    return bless \%opt, $class;
+	$opt{name}   || confess "CouchDB database requires a name.";
+	$opt{client} || confess "CouchDB database requires a client.";
+	$opt{name} .= '/' unless $opt{name} =~ m{/$};
+
+	return bless \%opt, $class;
 }
 
 sub validName {
-    shift;
-    my $name = shift;
-    return $name =~ m{^[a-z0-9_\$\(\)\+/-]+/$};
+	shift;
+	my $name = shift;
+	return $name =~ m{^[a-z0-9_\$\(\)\+/-]+/$};
 }
 
 sub uriName {
-    my $self = shift;
-    my $sn = $self->{name};
-    $sn =~ s{/(.)}{%2F$1}g;
-    return "$sn";
+	my $self = shift;
+	my $sn = $self->{name};
+	$sn =~ s{/(.)}{%2F$1}g;
+	return "$sn";
 }
 
 sub dbInfo {
-    my $self = shift;
-    my $res = $self->{client}->req('GET', $self->uriName);
-    return $res->{json} if $res->{success};
-    confess("Connection error: $res->{msg}");
+	my $self = shift;
+	my $res = $self->{client}->req('GET', $self->uriName);
+	return $res->{json} if $res->{success};
+	confess("Connection error: $res->{msg}");
 }
 
 sub create {
-    my $self = shift;
-    my $res = $self->{client}->req('PUT', $self->uriName);
-    return $self if $res->{success} and $res->{json}->{ok};
-    confess("Database '$self->{name}' exists: $res->{msg}") if $res->{status} == 409;
-    confess("Connection error: $res->{msg}");
+	my $self = shift;
+	my $res = $self->{client}->req('PUT', $self->uriName);
+	return $self if $res->{success} and $res->{json}->{ok};
+	confess("Database '$self->{name}' exists: $res->{msg}") if $res->{status} == 409;
+	confess("Connection error: $res->{msg}");
 }
 
 sub delete {
-    my $self = shift;
-    my $res = $self->{client}->req('DELETE', $self->uriName);
-    return 1 if $res->{success} and $res->{json}->{ok};
-    confess("Database '$self->{name}' not found: $res->{msg}") if $res->{status} == 404;
-    confess("Connection error: $res->{msg}");
+	my $self = shift;
+	my $res = $self->{client}->req('DELETE', $self->uriName);
+	return 1 if $res->{success} and $res->{json}->{ok};
+	confess("Database '$self->{name}' not found: $res->{msg}") if $res->{status} == 404;
+	confess("Connection error: $res->{msg}");
 }
 
 sub replicate {
@@ -83,7 +83,7 @@ sub replicate {
 
 	my @flags = ('continuous');
 
-    my ($M,$m,undef) = split(/\./,$self->{client}->serverInfo()->{version});
+	my ($M,$m,undef) = split(/\./,$self->{client}->serverInfo()->{version});
 	if ($m > 10) {
 		# This flag was added after v0.10
 		push(@flags,'create_target');
@@ -93,32 +93,32 @@ sub replicate {
 		$json->{$_} = (defined($args{$_}) && $args{$_})?$self->{client}->{json}->true:$self->{client}->{json}->false;
 	}
 
-    my $res = $self->{client}->req('POST','_replicate',$json);
+	my $res = $self->{client}->req('POST','_replicate',$json);
 	confess("Error replicating database: $res->{msg}") if $res->{status} >= 300;
 
 	return $res->{json};
 }
 
 sub newDoc {
-    my $self = shift;
-    my $id = shift;
-    my $rev = shift;
-    my $data = shift;
-    my $att = shift;
-    return CouchDB::Client::Doc->new(id => $id, rev => $rev, data => $data, attachments => $att, db => $self);
+	my $self = shift;
+	my $id = shift;
+	my $rev = shift;
+	my $data = shift;
+	my $att = shift;
+	return CouchDB::Client::Doc->new(id => $id, rev => $rev, data => $data, attachments => $att, db => $self);
 }
 
 sub listDocIdRevs {
-    my $self = shift;
-    my %args = @_;
-    my $qs = %args ? $self->argsToQuery(%args) : '';
-    my $res = $self->{client}->req('GET', $self->uriName . '_all_docs' . $qs);
-    confess("Connection error: $res->{msg}") unless $res->{success};
-    return [
-		map { 
+	my $self = shift;
+	my %args = @_;
+	my $qs = %args ? $self->argsToQuery(%args) : '';
+	my $res = $self->{client}->req('GET', $self->uriName . '_all_docs' . $qs);
+	confess("Connection error: $res->{msg}") unless $res->{success};
+	return [
+		map {
 			{
-				id  => $_->{id}, 
-				rev => ($_->{value}->{rev})? # The correct key may be version specific; 
+				id  => $_->{id},
+				rev => ($_->{value}->{rev})? # The correct key may be version specific;
 					$_->{value}->{rev}:      # v0.10.1 returns rev under this key,
 					$_->{value}->{_rev}      # older versions may return it here.
 			}
@@ -126,156 +126,156 @@ sub listDocIdRevs {
 }
 
 sub listDocs {
-    my $self = shift;
-    my %args = @_;
-    return [ map { $self->newDoc($_->{id}, $_->{rev}) } @{$self->listDocIdRevs(%args)} ];
+	my $self = shift;
+	my %args = @_;
+	return [ map { $self->newDoc($_->{id}, $_->{rev}) } @{$self->listDocIdRevs(%args)} ];
 }
 
 sub docExists {
-    my $self = shift;
-    my $id = shift;
-    my $rev = shift;
-    if ($rev) {
-        return (grep { $_->{id} eq $id and $_->{rev} eq $rev } @{$self->listDocIdRevs}) ? 1 : 0;
-    }
-    else {
-        return (grep { $_->{id} eq $id } @{$self->listDocIdRevs}) ? 1 : 0;
-    }
+	my $self = shift;
+	my $id = shift;
+	my $rev = shift;
+	if ($rev) {
+		return (grep { $_->{id} eq $id and $_->{rev} eq $rev } @{$self->listDocIdRevs}) ? 1 : 0;
+	}
+	else {
+		return (grep { $_->{id} eq $id } @{$self->listDocIdRevs}) ? 1 : 0;
+	}
 }
 
 sub newDesignDoc {
-    my $self = shift;
-    my $id = shift;
-    my $rev = shift;
-    my $data = shift;
-    return CouchDB::Client::DesignDoc->new(id => $id, rev => $rev, data => $data, db => $self);
+	my $self = shift;
+	my $id = shift;
+	my $rev = shift;
+	my $data = shift;
+	return CouchDB::Client::DesignDoc->new(id => $id, rev => $rev, data => $data, db => $self);
 }
 
 sub listDesignDocIdRevs {
-    my $self = shift;
-    my %args = @_;
-    return [grep { $_->{id} =~ m{^_design/} } @{$self->listDocIdRevs(%args)}];
+	my $self = shift;
+	my %args = @_;
+	return [grep { $_->{id} =~ m{^_design/} } @{$self->listDocIdRevs(%args)}];
 }
 
 sub listDesignDocs {
-    my $self = shift;
-    my %args = @_;
-    return [ map { $self->newDesignDoc($_->{id}, $_->{rev}) } @{$self->listDesignDocIdRevs(%args)} ];
+	my $self = shift;
+	my %args = @_;
+	return [ map { $self->newDesignDoc($_->{id}, $_->{rev}) } @{$self->listDesignDocIdRevs(%args)} ];
 }
 
 sub designDocExists {
-    my $self = shift;
-    my $id = shift;
-    my $rev = shift;
-    $id = "_design/$id" unless $id =~ m{^_design/};
-    if ($rev) {
-        return (grep { $_->{id} eq $id and $_->{rev} eq $rev } @{$self->listDesignDocIdRevs}) ? 1 : 0;
-    }
-    else {
-        return (grep { $_->{id} eq $id } @{$self->listDesignDocIdRevs}) ? 1 : 0;
-    }
+	my $self = shift;
+	my $id = shift;
+	my $rev = shift;
+	$id = "_design/$id" unless $id =~ m{^_design/};
+	if ($rev) {
+		return (grep { $_->{id} eq $id and $_->{rev} eq $rev } @{$self->listDesignDocIdRevs}) ? 1 : 0;
+	}
+	else {
+		return (grep { $_->{id} eq $id } @{$self->listDesignDocIdRevs}) ? 1 : 0;
+	}
 }
 
 sub tempView {
-    my $self = shift;
-    my $view = shift;
-    my $res = $self->{client}->req('POST', $self->uriName . '_temp_view', $view);
-    return $res->{json} if $res->{success};
-    confess("Connection error: $res->{msg}");
+	my $self = shift;
+	my $view = shift;
+	my $res = $self->{client}->req('POST', $self->uriName . '_temp_view', $view);
+	return $res->{json} if $res->{success};
+	confess("Connection error: $res->{msg}");
 }
 
 sub bulkStore {
-    my $self = shift;
-    my $docs = shift;
-    my $json = { docs => [map { $_->contentForSubmit } @$docs] };
-    my $res = $self->{client}->req('POST', $self->uriName . '_bulk_docs', $json);
-    confess("Connection error: $res->{msg}") unless $res->{success};
-    my $i = 0;
+	my $self = shift;
+	my $docs = shift;
+	my $json = { docs => [map { $_->contentForSubmit } @$docs] };
+	my $res = $self->{client}->req('POST', $self->uriName . '_bulk_docs', $json);
+	confess("Connection error: $res->{msg}") unless $res->{success};
+	my $i = 0;
 
-    # versions prior to 0.9 returned the results under the new_revs key,
-    # newer versions just return an array.
+	# versions prior to 0.9 returned the results under the new_revs key,
+	# newer versions just return an array.
 	my $list = (ref($res->{json}) eq "ARRAY")?$res->{json}:$res->{json}->{new_revs};
-    for my $ok (@{$list}) {
-        my $doc = $docs->[$i];
-        $doc->{id} = $ok->{id} unless $doc->{id};
-        $doc->{rev} = $ok->{rev};
-        $i++;
-    }
-    return $res->{json} if $res->{success};
+	for my $ok (@{$list}) {
+		my $doc = $docs->[$i];
+		$doc->{id} = $ok->{id} unless $doc->{id};
+		$doc->{rev} = $ok->{rev};
+		$i++;
+	}
+	return $res->{json} if $res->{success};
 }
 
 sub bulkDelete {
-    my $self = shift;
-    my $docs = shift;
-    my $json = { docs => [map { my $cnt = $_->contentForSubmit; $cnt->{_deleted} = $self->{client}->{json}->true; $cnt; } @$docs] };
-    my $res = $self->{client}->req('POST', $self->uriName . '_bulk_docs', $json);
-    confess("Connection error: $res->{msg}") unless $res->{success};
-    my $i = 0;
+	my $self = shift;
+	my $docs = shift;
+	my $json = { docs => [map { my $cnt = $_->contentForSubmit; $cnt->{_deleted} = $self->{client}->{json}->true; $cnt; } @$docs] };
+	my $res = $self->{client}->req('POST', $self->uriName . '_bulk_docs', $json);
+	confess("Connection error: $res->{msg}") unless $res->{success};
+	my $i = 0;
 
-    # versions prior to 0.9 returned the results under the new_revs key,
-    # newer versions just return an array.
+	# versions prior to 0.9 returned the results under the new_revs key,
+	# newer versions just return an array.
 	my $list = (ref($res->{json}) eq "ARRAY")?$res->{json}:$res->{json}->{new_revs};
-    for my $ok (@{$list}) {
-        my $doc = $docs->[$i];
-        $doc->{deletion_stub_rev} = $ok->{rev};
-        $doc->{rev} = '';
-        $doc->data({});
-        $doc->attachments({});
-        $i++;
-    }
-    return $res->{json} if $res->{success};
+	for my $ok (@{$list}) {
+		my $doc = $docs->[$i];
+		$doc->{deletion_stub_rev} = $ok->{rev};
+		$doc->{rev} = '';
+		$doc->data({});
+		$doc->attachments({});
+		$i++;
+	}
+	return $res->{json} if $res->{success};
 }
 
 # from docs
-# key=keyvalue 
-# startkey=keyvalue 
-# startkey_docid=docid 
-# endkey=keyvalue 
-# count=max rows to return 
-# update=false 
-# descending=true 
-# skip=rows to skip 
+# key=keyvalue
+# startkey=keyvalue
+# startkey_docid=docid
+# endkey=keyvalue
+# count=max rows to return
+# update=false
+# descending=true
+# skip=rows to skip
 sub fixViewArgs {
-    my $self = shift;
-    my %args = @_;
-    
-    for my $k (keys %args) {
-        if ($k eq 'key' or $k eq 'startkey' or $k eq 'endkey') {
-            if (ref($args{$k}) eq 'ARRAY' or ref($args{$k}) eq 'HASH') {
-                $args{$k} = $self->server->json->encode($args{$k});
-            }
-            else {
-                $args{$k} = '"' . $args{$k} . '"';
-            }
-        }
-        elsif ($k eq 'descending') {
-            if ($args{$k}) {
-                $args{$k} = 'true';
-            }
-            else {
-                delete $args{$k};
-            }
-        }
-        elsif ($k eq 'update') {
-            if ($args{$k}) {
-                delete $args{$k};
-            }
-            else {
-                $args{$k} = 'false';
-            }
-        }
-    }
-    return %args;
+	my $self = shift;
+	my %args = @_;
+
+	for my $k (keys %args) {
+		if ($k eq 'key' or $k eq 'startkey' or $k eq 'endkey') {
+			if (ref($args{$k}) eq 'ARRAY' or ref($args{$k}) eq 'HASH') {
+				$args{$k} = $self->server->json->encode($args{$k});
+			}
+			else {
+				$args{$k} = '"' . $args{$k} . '"';
+			}
+		}
+		elsif ($k eq 'descending') {
+			if ($args{$k}) {
+				$args{$k} = 'true';
+			}
+			else {
+				delete $args{$k};
+			}
+		}
+		elsif ($k eq 'update') {
+			if ($args{$k}) {
+				delete $args{$k};
+			}
+			else {
+				$args{$k} = 'false';
+			}
+		}
+	}
+	return %args;
 }
 
 sub argsToQuery {
-    my $self = shift;
-    my %args = @_;
-    %args = $self->fixViewArgs(%args);
-    return  '?' .
-            join '&',
-            map { uri_escape_utf8($_) . '=' . uri_escape_utf8($args{$_}) }
-            keys %args;
+	my $self = shift;
+	my %args = @_;
+	%args = $self->fixViewArgs(%args);
+	return  '?' .
+			join '&',
+			map { uri_escape_utf8($_) . '=' . uri_escape_utf8($args{$_}) }
+			keys %args;
 }
 
 1;
@@ -288,14 +288,14 @@ CouchDB::Client::DB - CouchDB::Client database
 
 =head1 SYNOPSIS
 
-    use CouchDB::Client;
-    my $c = CouchDB::Client->new(uri => 'https://dbserver:5984/');
-    my $db = $c->newDB('my-stuff')->create;
-    $db->dbInfo;
-    my $doc = $db->newDoc('dahut.svg', undef, { foo => 'bar' })->create;
-    my $dd = $db->newDesignDoc('dahut.svg', undef, $myViews)->create;
-    #...
-    $db->delete;
+	use CouchDB::Client;
+	my $c = CouchDB::Client->new(uri => 'https://dbserver:5984/');
+	my $db = $c->newDB('my-stuff')->create;
+	$db->dbInfo;
+	my $doc = $db->newDoc('dahut.svg', undef, { foo => 'bar' })->create;
+	my $dd = $db->newDesignDoc('dahut.svg', undef, $myViews)->create;
+	#...
+	$db->delete;
 
 =head1 DESCRIPTION
 
@@ -309,7 +309,7 @@ We don't currently handle the various options available on listing all documents
 
 =item new
 
-Constructor. Takes a hash or hashref of options, both of which are required: 
+Constructor. Takes a hash or hashref of options, both of which are required:
 C<name> being the name of the DB (do not escape it, that is done internally,
 however the name isn't validated, you can use C<validName> for that) and C<client>
 being a reference to the parent C<Couch::Client>. It is not expected that
@@ -325,14 +325,14 @@ Returns true if the name is a valid CouchDB database name, false otherwise.
 Returns metadata that CouchDB maintains about its databases as a Perl structure.
 It will throw an exception if it can't connect. Typically it will look like:
 
-    {
-        db_name         => "dj", 
-        doc_count       => 5, 
-        doc_del_count   => 0, 
-        update_seq      => 13, 
-        compact_running => 0, 
-        disk_size       => 16845,
-    }
+	{
+		db_name         => "dj",
+		doc_count       => 5,
+		doc_del_count   => 0,
+		update_seq      => 13,
+		compact_running => 0,
+		disk_size       => 16845,
+	}
 
 =item create
 
@@ -346,8 +346,8 @@ the DB can't be found, or for connection problems.
 
 =item replicate %ARGS
 
-Sets up replication between two databases.  Setting C<target> to a database url (either local or remote) 
-replicates this database into one specified by the url.  Conversely, setting C<source> to a database url 
+Sets up replication between two databases.  Setting C<target> to a database url (either local or remote)
+replicates this database into one specified by the url.  Conversely, setting C<source> to a database url
 replicates that database into the current one.  In CouchDB terminology, C<target> and C<source>, respectively,
 set up "push" and "pull" replication.
 
@@ -426,7 +426,7 @@ Returns the name of the database escaped.
 =item fixViewArgs %ARGS
 
 Takes a hash of view parameters expressed in a Perlish fashion (e.g. 1 for true or an arrayref
-for multi-valued keys) and returns a hash with the same options turned into what CouchDB 
+for multi-valued keys) and returns a hash with the same options turned into what CouchDB
 understands.
 
 =item argsToQuery %ARGS
@@ -441,17 +441,17 @@ string (complete with leading '?') to pass on to CouchDB.
 Robin Berjon, <robin @t berjon d.t com>
 Maverick Edwards, <maverick @t smurfbane d.t org> (current maintainer)
 
-=head1 BUGS 
+=head1 BUGS
 
 Please report any bugs or feature requests to bug-couchdb-client at rt.cpan.org, or through the
 web interface at http://rt.cpan.org/NoAuth/ReportBug.html?Queue=CouchDB-Client.
 
-=head1 COPYRIGHT & LICENSE 
+=head1 COPYRIGHT & LICENSE
 
 Copyright 2008 Robin Berjon, all rights reserved.
 
-This library is free software; you can redistribute it and/or modify it under the same terms as 
-Perl itself, either Perl version 5.8.8 or, at your option, any later version of Perl 5 you may 
+This library is free software; you can redistribute it and/or modify it under the same terms as
+Perl itself, either Perl version 5.8.8 or, at your option, any later version of Perl 5 you may
 have available.
 
 =cut

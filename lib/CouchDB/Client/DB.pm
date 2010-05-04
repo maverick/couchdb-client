@@ -242,7 +242,7 @@ sub fixViewArgs {
 	for my $k (keys %args) {
 		if ($k eq 'key' or $k eq 'startkey' or $k eq 'endkey') {
 			if (ref($args{$k}) eq 'ARRAY' or ref($args{$k}) eq 'HASH') {
-				$args{$k} = $self->server->json->encode($args{$k});
+				$args{$k} = $self->{client}->{json}->encode($args{$k});
 			}
 			else {
 				$args{$k} = '"' . $args{$k} . '"';

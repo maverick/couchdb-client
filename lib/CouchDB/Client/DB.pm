@@ -73,7 +73,7 @@ sub replicate {
 		$json->{source} = $args{source};  # pull replication
 		$json->{target} = $name;
 	}
-	elsif (defined($args{'target'})) {
+	elsif (defined($args{target})) {
 		$json->{source} = $name;          # push replication
 		$json->{target} = $args{target};
 	}

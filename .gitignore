@@ -1,7 +1,9 @@
 Makefile
+META.yml
 blib
 pm_to_blib
 cover_db
 *.tar.gz
 *.bak
 *.old
+inc

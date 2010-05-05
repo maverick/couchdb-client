@@ -18,6 +18,7 @@
 ^log$
 ^blibdirs$
 \.tar\.gz$
+^.gitignore$/
 
 cover_db
 CouchDB-Deploy.tmproj

@@ -1,3 +1,8 @@
+0.08 - 2010-05-16
+=================
+Applied patch from Jon Allen to fix json encoding bug on numeric values
+in CouchDB::Client::DB.
+
 0.07 - 2010-05-05
 =================
 Applied patch from Jon Allen to fix json encoding bug in fixViewArgs 

@@ -46,7 +46,7 @@ sub attachments { @_ == 2 ? $_[0]->{attachments} = $_[1] : $_[0]->{attachments};
 sub uriName {
 	my $self = shift;
 	return undef unless $self->{id};
-	return $self->{db}->uriName . $self->{id};
+	return $self->{db}->uriName . '/' . uri_escape_utf8($self->{id});
 }
 
 sub create {

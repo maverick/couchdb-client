@@ -17,7 +17,6 @@ sub new {
 
 	$opt{name}   || confess "CouchDB database requires a name.";
 	$opt{client} || confess "CouchDB database requires a client.";
-	$opt{name} .= '/' unless $opt{name} =~ m{/$};
 
 	return bless \%opt, $class;
 }
@@ -30,8 +29,7 @@ sub validName {
 
 sub uriName {
 	my $self = shift;
-	my $sn = $self->{name};
-	$sn =~ s{/(.)}{%2F$1}g;
+	my $sn = uri_escape_utf8($self->{name});
 	return "$sn";
 }
 
@@ -112,7 +110,7 @@ sub listDocIdRevs {
 	my $self = shift;
 	my %args = @_;
 	my $qs = %args ? $self->argsToQuery(%args) : '';
-	my $res = $self->{client}->req('GET', $self->uriName . '_all_docs' . $qs);
+	my $res = $self->{client}->req('GET', $self->uriName . '/_all_docs' . $qs);
 	confess("Connection error: $res->{msg}") unless $res->{success};
 	return [
 		map {
@@ -179,7 +177,7 @@ sub designDocExists {
 sub tempView {
 	my $self = shift;
 	my $view = shift;
-	my $res = $self->{client}->req('POST', $self->uriName . '_temp_view', $view);
+	my $res = $self->{client}->req('POST', $self->uriName . '/_temp_view', $view);
 	return $res->{json} if $res->{success};
 	confess("Connection error: $res->{msg}");
 }
@@ -188,7 +186,7 @@ sub bulkStore {
 	my $self = shift;
 	my $docs = shift;
 	my $json = { docs => [map { $_->contentForSubmit } @$docs] };
-	my $res = $self->{client}->req('POST', $self->uriName . '_bulk_docs', $json);
+	my $res = $self->{client}->req('POST', $self->uriName . '/_bulk_docs', $json);
 	confess("Connection error: $res->{msg}") unless $res->{success};
 	my $i = 0;
 
@@ -208,7 +206,7 @@ sub bulkDelete {
 	my $self = shift;
 	my $docs = shift;
 	my $json = { docs => [map { my $cnt = $_->contentForSubmit; $cnt->{_deleted} = $self->{client}->{json}->true; $cnt; } @$docs] };
-	my $res = $self->{client}->req('POST', $self->uriName . '_bulk_docs', $json);
+	my $res = $self->{client}->req('POST', $self->uriName . '/_bulk_docs', $json);
 	confess("Connection error: $res->{msg}") unless $res->{success};
 	my $i = 0;
 

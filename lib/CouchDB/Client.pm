@@ -79,13 +79,13 @@ sub req {
 	my $meth = shift;
 	my $path = shift;
 	my $content = shift;
-    my $headers = undef;
+	my $headers = undef;
 
 	if (ref $content) {
 		$content = encode('utf-8', $self->{json}->encode($content));
         $headers = HTTP::Headers->new('Content-Type' => 'application/json');
 	}
-    my $res = $self->{ua}->request( HTTP::Request->new($meth, $self->uriForPath($path), $headers, $content) );
+	my $res = $self->{ua}->request( HTTP::Request->new($meth, $self->uriForPath($path), $headers, $content) );
 	my $ret = {
 		status  => $res->code,
 		msg     => $res->status_line,

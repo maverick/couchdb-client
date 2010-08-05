@@ -360,6 +360,8 @@ my $REP_DB;
 		$doc->data->{field3} = 'updated again';
 		$doc->update;
 
+        sleep 2; # give the replication a chance to happen
+
 		eval {$rep_doc->retrieve};
 		ok $rep_doc->data->{field3} eq "updated again" , "updating the original changes the replicated one";
 	}

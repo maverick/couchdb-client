@@ -11,6 +11,7 @@ use LWP::UserAgent  qw();
 use HTTP::Request   qw();
 use Encode          qw(encode);
 use Carp            qw(confess);
+use URI;
 
 use CouchDB::Client::DB;
 
@@ -30,6 +31,16 @@ sub new {
 	}
 	$self{json} = ($opt{json} || JSON::Any->new(utf8 => 1, allow_blessed => 1));
 	$self{ua}   = ($opt{ua}   || LWP::UserAgent->new(agent => "CouchDB::Client/$VERSION"));
+
+	if ($opt{username} and $opt{password}) {
+	    my $uri = URI->new($self{uri});
+	    $self{ua}->credentials(
+	        $uri->host . ':' . $uri->port,
+	        'administrator',
+	        $opt{username},
+	        $opt{password},
+	    );
+	}
 
 	return bless \%self, $class;
 }

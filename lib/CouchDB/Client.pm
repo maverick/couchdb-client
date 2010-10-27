@@ -36,7 +36,7 @@ sub new {
 	    my $uri = URI->new($self{uri});
 	    $self{ua}->credentials(
 	        $uri->host . ':' . $uri->port,
-	        'administrator',
+	        ($opt{realm} || 'administrator'),
 	        $opt{username},
 	        $opt{password},
 	    );

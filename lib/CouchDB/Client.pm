@@ -148,11 +148,16 @@ This module is a client for the CouchDB database.
 
 =item new
 
-Constructor. Takes a hash or hashref of options: C<uri> which specifies the server's URI;
-C<scheme>, C<host>, C<port> which are used if C<uri> isn't provided and default to 'http',
-'localhost', and '5984' respectively; C<json> which defaults to a JSON::Any object with
-utf8 and allow_blessed turned on but can be replaced with anything with the same interface;
-and C<ua> which is a LWP::UserAgent object and can also be replaced.
+Constructor. Takes a hash or hashref of options: C<uri> which specifies the
+server's URI; C<scheme>, C<host>, C<port> which are used if C<uri> isn't
+provided and default to 'http', 'localhost', and '5984' respectively; C<json>
+which defaults to a JSON::Any object with utf8 and allow_blessed turned on but
+can be replaced with anything with the same interface; and C<ua> which is a
+LWP::UserAgent object and can also be replaced. For ease of use you can also
+pass C<username>, C<password> and C<realm>, which will if so be used to add
+login credentials to the LWP::UserAgent object. C<realm> is optional, and will
+if not specified default to "administrator" (which is the default used by
+CouchDB).
 
 =item testConnection
 

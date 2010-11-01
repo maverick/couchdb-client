@@ -11,7 +11,7 @@ use URI::Escape qw(uri_escape_utf8);
 use CouchDB::Client::Doc;
 use CouchDB::Client::DesignDoc;
 
-use B qw[svref_2object SVf_IOK SVf_POK];
+use B qw[svref_2object SVf_IOK SVf_NOK];
 
 sub new {
 	my $class = shift;
@@ -240,12 +240,8 @@ sub _is_currently_numeric($) {
     # It has a current public integer value.
     return 1 if $ref->FLAGS & SVf_IOK;
 
-   # It's a mixed string/float. No way to tell which part is current without
-   # dropping to the C level, so let's always call it numeric. If it's necessary
-   # to get a mixed value treated as a string, putting it into a double-quoted
-   # string and assigning the result to a fresh variable (my $new = "$old";)
-   # works.
-    return 1 if $type eq 'B::PVNV';
+    # It has a current public float value.
+    return 1 if $ref->FLAGS & SVf_NOK;
 
     # It's none of the above, so call it not numeric (might still be, due to
     # magic).

@@ -11,6 +11,8 @@ use URI::Escape qw(uri_escape_utf8);
 use CouchDB::Client::Doc;
 use CouchDB::Client::DesignDoc;
 
+use B qw[svref_2object SVf_IOK SVf_POK];
+
 sub new {
 	my $class = shift;
 	my %opt = @_ == 1 ? %{$_[0]} : @_;
@@ -224,6 +226,32 @@ sub bulkDelete {
 	return $res->{json} if $res->{success};
 }
 
+sub _is_currently_numeric($) {
+    # Get a B::-type object from whatever it is
+    my $ref  = svref_2object(\$_[0]);
+    my $type = ref($ref);
+
+    # It's a pure numeric value
+    return 1 if ($type eq 'B::NV' or $type eq 'B::IV');
+
+    # It's a pure string value.
+    return if $type eq 'B::PV';
+
+    # It has a current public integer value.
+    return 1 if $ref->FLAGS & SVf_IOK;
+
+   # It's a mixed string/float. No way to tell which part is current without
+   # dropping to the C level, so let's always call it numeric. If it's necessary
+   # to get a mixed value treated as a string, putting it into a double-quoted
+   # string and assigning the result to a fresh variable (my $new = "$old";)
+   # works.
+    return 1 if $type eq 'B::PVNV';
+
+    # It's none of the above, so call it not numeric (might still be, due to
+    # magic).
+    return;
+}
+
 # from docs
 # key=keyvalue
 # startkey=keyvalue
@@ -244,7 +272,7 @@ sub fixViewArgs {
 				$args{$k} = $self->{client}->{json}->encode($args{$k});
 			}
 			else {
-                                unless ($args{$k} =~ /^\d+(?:\.\d+)*$/s) {
+                                unless (_is_currently_numeric($args{$k})) {
                                         $args{$k} = '"' . $args{$k} . '"';
                                 }
 			}

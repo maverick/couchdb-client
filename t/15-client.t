@@ -21,7 +21,7 @@ if($cdb->testConnection) {
 		plan skip_all => "Requires CouchDB version 0.8.0 or better; running $v";
 	}
 	else {
-		plan tests => 77;
+		plan tests => 78;
 	}
 }
 else {
@@ -365,6 +365,16 @@ my $REP_DB;
 		eval {$rep_doc->retrieve};
 		ok $rep_doc->data->{field3} eq "updated again" , "updating the original changes the replicated one";
 	}
+}
+
+
+### Test for numeric id bug
+
+{
+    my $numeric_id_doc = $DB->newDoc(17, undef, {some_data => 4711});
+    eval {$numeric_id_doc->create};
+    ok($numeric_id_doc && !$@, 'doc with numeric id created');
+    eval {$numeric_id_doc->delete}; # cleanup
 }
 
 ### --- THE CLEANUP AT THE END

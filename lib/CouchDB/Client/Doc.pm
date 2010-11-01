@@ -71,7 +71,7 @@ sub create {
 sub contentForSubmit {
 	my $self = shift;
 	my $content = $self->{data};
-	$content->{_id} = $self->{id} if $self->{id};
+	$content->{_id} = '' . $self->{id} if $self->{id}; # Force stringness of id attribute
 	$content->{_rev} = $self->{rev} if $self->{rev};
 	$content->{_attachments} = $self->{attachments} if $self->{attachments} and keys %{$self->{attachments}};
 	return $content;

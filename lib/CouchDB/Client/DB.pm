@@ -233,6 +233,7 @@ sub bulkDelete {
 # update=false
 # descending=true
 # skip=rows to skip
+# group=do grouping for reducing views
 sub fixViewArgs {
 	my $self = shift;
 	my %args = @_;
@@ -248,7 +249,7 @@ sub fixViewArgs {
                                 }
 			}
 		}
-		elsif ($k eq 'descending') {
+		elsif ($k eq 'descending' or $k eq 'group') {
 			if ($args{$k}) {
 				$args{$k} = 'true';
 			}

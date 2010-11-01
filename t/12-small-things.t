@@ -36,14 +36,16 @@ my $DB = $C->newDB('blah');
 		endkey   => 'foo',
 		descending => 1,
 		update => 1,
-		keeps => 'me correctly'
+		keeps => 'me correctly',
+		group => 1,
 	);
 
 	is_deeply(\%encoded, {
 		startkey => '42',
 		endkey => '"foo"',
 		descending => 'true',
-		keeps => 'me correctly'
+		keeps => 'me correctly',
+		group => 'true',
 	}, "fixViewArgs works as expected");
 
 	%encoded = $DB->fixViewArgs(descending => 0, update => 0);

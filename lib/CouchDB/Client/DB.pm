@@ -131,7 +131,7 @@ sub listDocs {
 	return [ map { $self->newDoc($_->{id}, $_->{rev}) } @{$self->listDocIdRevs(%args)} ];
 }
 
-sub docExists { 
+sub docExists {
 	my $self = shift;
 	my $id = shift;
 	my $rev = shift;
@@ -139,10 +139,13 @@ sub docExists {
 	eval {
 	    $doc->retrieve;
 	};
-	if($@) {
+	my $err = $@;
+	if(!$err) {
+	    return 1;
+	} elsif($err =~ /Object not found/) {
 	    return 0;
 	} else {
-	    return 1;
+	    die $err;
 	}
 }
 

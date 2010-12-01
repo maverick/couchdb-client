@@ -131,15 +131,18 @@ sub listDocs {
 	return [ map { $self->newDoc($_->{id}, $_->{rev}) } @{$self->listDocIdRevs(%args)} ];
 }
 
-sub docExists {
+sub docExists { 
 	my $self = shift;
 	my $id = shift;
 	my $rev = shift;
-	if ($rev) {
-		return (grep { $_->{id} eq $id and $_->{rev} eq $rev } @{$self->listDocIdRevs}) ? 1 : 0;
-	}
-	else {
-		return (grep { $_->{id} eq $id } @{$self->listDocIdRevs}) ? 1 : 0;
+	my $doc = $self->newDoc($id, $rev);
+	eval {
+	    $doc->retrieve;
+	};
+	if($@) {
+	    return 0;
+	} else {
+	    return 1;
 	}
 }
 

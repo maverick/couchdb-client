@@ -160,7 +160,9 @@ sub newDesignDoc {
 sub listDesignDocIdRevs {
 	my $self = shift;
 	my %args = @_;
-	return [grep { $_->{id} =~ m{^_design/} } @{$self->listDocIdRevs(%args)}];
+	$args{startkey} = '_design';
+	$args{endkey} = '_design0';
+	return [@{$self->listDocIdRevs(%args)}];
 }
 
 sub listDesignDocs {

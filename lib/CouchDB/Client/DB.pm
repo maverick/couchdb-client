@@ -234,16 +234,16 @@ sub bulkDelete {
 	return $res->{json} if $res->{success};
 }
 
-sub _is_currently_numeric($) {
+sub _is_currently_numeric {
     # Get a B::-type object from whatever it is
-    my $ref  = svref_2object(\$_[0]);
+    my $ref  = svref_2object(\$_[1]);
     my $type = ref($ref);
 
     # It's a pure numeric value
     return 1 if ($type eq 'B::NV' or $type eq 'B::IV');
 
     # It's a pure string value.
-    return if $type eq 'B::PV';
+    return 0 if $type eq 'B::PV';
 
     # It has a current public integer value.
     return 1 if $ref->FLAGS & SVf_IOK;
@@ -253,7 +253,7 @@ sub _is_currently_numeric($) {
 
     # It's none of the above, so call it not numeric (might still be, due to
     # magic).
-    return;
+    return 0;
 }
 
 # from docs
@@ -276,7 +276,7 @@ sub fixViewArgs {
 				$args{$k} = $self->{client}->{json}->encode($args{$k});
 			}
 			else {
-                                unless (_is_currently_numeric($args{$k})) {
+                                unless ($self->_is_currently_numeric($args{$k})) {
                                         $args{$k} = '"' . $args{$k} . '"';
                                 }
 			}

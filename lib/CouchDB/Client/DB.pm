@@ -131,6 +131,15 @@ sub listDocs {
 	return [ map { $self->newDoc($_->{id}, $_->{rev}) } @{$self->listDocIdRevs(%args)} ];
 }
 
+sub countDocs {
+    my $self = shift;
+    my $qs = $self->argsToQuery(limit => 0);
+	my $res = $self->{client}->req('GET', $self->uriName . '/_all_docs' . $qs);
+	confess("Connection error: $res->{msg}") unless $res->{success};
+
+	return $res->{json}{total_rows};
+}
+
 sub docExists {
 	my $self = shift;
 	my $id = shift;

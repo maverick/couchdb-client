@@ -11,6 +11,7 @@ use LWP::UserAgent  qw();
 use HTTP::Request   qw();
 use Encode          qw(encode);
 use Carp            qw(confess);
+use URI::Escape     qw(uri_escape_utf8);
 
 use CouchDB::Client::DB;
 
@@ -70,7 +71,11 @@ sub dbExists {
 	my $self = shift;
 	my $name = shift;
 	$name =~ s{/$}{};
-	return (grep { $_ eq $name } @{$self->listDBNames}) ? 1 : 0;
+	return 0 if $name =~ m/[A-Z]/; # CouchDB does not allow upper case in DB names
+	my $res = $self->req('GET', uri_escape_utf8($name));
+	return 1 if $res->{status} eq '200';
+	return 0 if $res->{status} eq '404';
+	confess("Connection error: $res->{msg}");
 }
 
 # --- CONNECTION HANDLING ---

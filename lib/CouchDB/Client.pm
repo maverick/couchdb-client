@@ -7,12 +7,10 @@ use warnings;
 our $VERSION = '0.09';
 
 use JSON::Any       qw(XS JSON DWIW);
-use LWP::UserAgent  qw();
-use HTTP::Request   qw();
-use Encode          qw(encode);
 use Carp            qw(confess);
 use URI::Escape     qw(uri_escape_utf8);
 
+use CouchDB::Curl	qw(JSONCall);
 use CouchDB::Client::DB;
 
 sub new {
@@ -30,7 +28,6 @@ sub new {
 					 ($opt{port}   || '5984')      . '/';
 	}
 	$self{json} = ($opt{json} || JSON::Any->new(utf8 => 1, allow_blessed => 1));
-	$self{ua}   = ($opt{ua}   || LWP::UserAgent->new(agent => "CouchDB::Client/$VERSION"));
 
 	return bless \%self, $class;
 }
@@ -81,24 +78,21 @@ sub dbExists {
 # --- CONNECTION HANDLING ---
 sub req {
 	my $self = shift;
-	my $meth = shift;
+	my $method = shift;
 	my $path = shift;
 	my $content = shift;
-	my $headers = undef;
-
-	if (ref $content) {
-		$content = encode('utf-8', $self->{json}->encode($content));
-        $headers = HTTP::Headers->new('Content-Type' => 'application/json');
-	}
-	my $res = $self->{ua}->request( HTTP::Request->new($meth, $self->uriForPath($path), $headers, $content) );
-	my $ret = {
-		status  => $res->code,
-		msg     => $res->status_line,
-		success => 0,
-	};
-	if ($res->is_success) {
+	my ($ret,$res);
+	eval {$res = JSONCall($method, $self->uriForPath($path), $content)};
+	if (my $e = HTTP::Exception->caught) {
+        $ret->{success} = 0;
+        $ret->{status} = $e->code;
+        $ret->{msg} = $e->status_message;
+    } else {
 		$ret->{success} = 1;
-		$ret->{json} = $self->{json}->decode($res->content);
+		$ret->{status}  = 200;
+	}
+	if ($ret->{success}) {
+		$ret->{json} = $res
 	}
 	return $ret;
 }

@@ -140,7 +140,10 @@ sub _CompileQuery {
 			if ( $vref and $vref ne 'SCALAR') {
 				$v = encodeURIComponent(encode_json($query->{$key}));
 			} else {
-				$v = $query->{$key};
+				my $val = encode_json({value=>$query->{$key}});
+				($v) = ($val =~ m/{[^:]*:(.*)}/);
+				$v = encodeURIComponent($v);
+				$v = $query->{$key} if $key eq 'rev';
 			}
 			push @params,$key."=".$v;
 		}

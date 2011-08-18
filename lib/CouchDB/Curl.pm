@@ -130,14 +130,14 @@ sub _CompileQuery {
 	my ($query) = @_;
 	return undef unless $query;
 	my $ref = ref $query;
-	if ($ref eq 'SCALAR') {
+	if (!$ref) {
 		return $query;
 	} elsif ($ref eq 'HASH') {
 		my @params;
 		foreach my $key ( sort keys %$query ) {
 			my $v;
 			my $vref = ref $query->{$key};
-			if ( $vref and $vref ne 'SCALAR') {
+			if ( $vref ) {
 				$v = encodeURIComponent(encode_json($query->{$key}));
 			} else {
 				my $val = encode_json({value=>$query->{$key}});

@@ -243,6 +243,18 @@ sub bulkDelete {
 	return $res->{json} if $res->{success};
 }
 
+sub bulkGet {
+    my $self = shift;
+    my $ids = shift;
+    my @id = map {"$_"} @$ids;
+
+    my $res = $self->{client}->req('POST', $self->uriName . '/_all_docs?include_docs=true', {keys => \@id});
+    confess("Connection error: " . $res->{msg}) unless $res->{success};
+    $res = $res->{json}{rows};
+
+    return {map {$_->{key} => $_->{doc}} @$res};
+}
+
 sub _is_currently_numeric {
     # Get a B::-type object from whatever it is
     my $ref  = svref_2object(\$_[1]);
@@ -460,6 +472,13 @@ upon failure.
 Same as above but performs mass deletion of documents. Note that using bulkStore you could
 also obtain the same effect by setting a C<_deleted> field to true on your objects but
 that is not recommended as fields that begin with an underscore are reserved by CouchDB.
+
+=item bulkGet \@IDS
+
+Retrieve a large number of documents with one call to the database. The one
+argument should be a reference to a list of document ids. It will return a
+reference to a hash, where the keys are the given ids and the values are the
+corresponding L<CouchDB::Client::Doc> objects or C<undefined>.
 
 =item uriName
 

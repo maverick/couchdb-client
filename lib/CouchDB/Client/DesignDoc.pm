@@ -76,7 +76,6 @@ sub bulkGetView {
     my $self = shift;
     my $view = shift;
     my $keys = shift;
-    my @key = map {"$_"} @$keys;
 
 	confess("No such view: '$view'") unless exists $self->views->{$view};
 	my $sn = $self->id;

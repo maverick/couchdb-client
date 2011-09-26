@@ -72,6 +72,26 @@ sub queryView {
 	return $res->{json};
 }
 
+sub bulkGetView {
+    my $self = shift;
+    my $view = shift;
+    my $keys = shift;
+    my @key = map {"$_"} @$keys;
+
+	confess("No such view: '$view'") unless exists $self->views->{$view};
+	my $sn = $self->id;
+	$sn =~ s{^_design/}{};
+	$sn = uri_escape_utf8($sn);
+
+	my $vp = "/_design/$sn/_view/$view";
+
+    my $res = $self->{db}{client}->req('POST', $self->{db}->uriName . $vp . '?include_docs=true', {keys => \@key});
+    confess("Connection error: " . $res->{msg}) unless $res->{success};
+    $res = $res->{json}{rows};
+
+    return [map {{$_->{key} =>$_->{doc}}} @$res];
+}
+
 1;
 
 =pod
@@ -132,6 +152,13 @@ quoted properly.
 The data structure that is returned is a hashref that will contain C<total_rows> and
 C<offset> keys, as well as a C<rows> field that contains an array ref being the
 resultset.
+
+=item bulkGetView $VIEW_NAME, $KEYS_AREF
+
+Takes the name of a view in this design document, and a reference to a list of
+keys. It will then use the POST interface to retrieve all documents matching
+that key in a single request. It will return a reference to a list of hash
+references, where each hash is a single key => document pair.
 
 =back
 

@@ -76,6 +76,7 @@ sub bulkGetView {
     my $self = shift;
     my $view = shift;
     my $keys = shift;
+    my %args = @_;
 
 	confess("No such view: '$view'") unless exists $self->views->{$view};
 	my $sn = $self->id;
@@ -83,12 +84,16 @@ sub bulkGetView {
 	$sn = uri_escape_utf8($sn);
 
 	my $vp = "/_design/$sn/_view/$view";
-
-    my $res = $self->{db}{client}->req('POST', $self->{db}->uriName . $vp . '?include_docs=true', {keys => \@key});
+	if ($self->views->{$view}{reduce}) {
+        $args{group} = 'true' unless (exists $args{group} or exists $args{group_level});
+    }
+    my $qs = %args ? $self->{db}->argsToQuery(%args) : '';
+    
+    my $res = $self->{db}{client}->req('POST', $self->{db}->uriName . $vp . $qs, {keys => $keys});
     confess("Connection error: " . $res->{msg}) unless $res->{success};
     $res = $res->{json}{rows};
 
-    return [map {{$_->{key} =>$_->{doc}}} @$res];
+    return $res;
 }
 
 1;
@@ -152,12 +157,15 @@ The data structure that is returned is a hashref that will contain C<total_rows>
 C<offset> keys, as well as a C<rows> field that contains an array ref being the
 resultset.
 
-=item bulkGetView $VIEW_NAME, $KEYS_AREF
+=item bulkGetView $VIEW_NAME, $KEYS_AREF, %ARGS?
 
-Takes the name of a view in this design document, and a reference to a list of
-keys. It will then use the POST interface to retrieve all documents matching
-that key in a single request. It will return a reference to a list of hash
-references, where each hash is a single key => document pair.
+Takes the name of a view in this design document, a reference to a list of
+keys and an optional hash of query arguments. It will return a reference to a
+list of hash references, where each hash is one fetched result. They will have
+at least two keys, C<key> and C<value>. They may also have C<id> (for
+non-reducing views) and C<doc> (if you set the C<include_docs> argument to
+true). If the view is reducing, C<group=true> will be turned on automatically,
+unless it or C<group_level> is included in the passed-in argument hash.
 
 =back
 

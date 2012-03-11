@@ -224,6 +224,13 @@ sub bulkDelete {
 	return $res->{json} if $res->{success};
 }
 
+sub compact {
+    my $self = shift;
+	my $res = $self->{client}->req('POST', $self->uriName . '/_compact');
+	return $res->{json} if $res->{success};
+	confess("Connection error: $res->{msg}");
+}
+
 # from docs
 # key=keyvalue
 # startkey=keyvalue
@@ -433,6 +440,12 @@ understands.
 
 Takes a hash of view parameters, runs them through C<fixViewArgs>, and returns a query
 string (complete with leading '?') to pass on to CouchDB.
+
+=back
+
+=item compact
+
+Compact the DB
 
 =back
 

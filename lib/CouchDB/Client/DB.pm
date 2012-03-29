@@ -9,6 +9,7 @@ use Carp        qw(confess);
 use URI::Escape qw(uri_escape_utf8);
 use CouchDB::Client::Doc;
 use CouchDB::Client::DesignDoc;
+use Try::Tiny;
 
 use B qw[svref_2object SVf_IOK SVf_NOK];
 
@@ -283,13 +284,18 @@ sub _is_currently_numeric {
 sub _install_views {
     my $self = shift;
 
-    my @ddocs = @{$self->listDesignDocs};
+    my @ddocs;
+    
+    try {
+        @ddocs = @{$self->listDesignDocs};
+    };
 
     foreach my $ddoc (@ddocs) {
         $ddoc->retrieve;
         my $name = $ddoc->id;
         $name =~ s|_design/||;
         no strict 'refs';
+        no warnings 'redefine';
         foreach my $view ($ddoc->listViews) {
             my $method_name = $name . '_' . $view;
             *{"CouchDB::Client::DB::$method_name"} = sub {
@@ -454,6 +460,10 @@ of arguments matching those understood by CouchDB queries.
 
 The same as above, but returns an arrayref of C<CouchDB::Client::Doc> objects.
 Takes an optional hash of arguments matching those understood by CouchDB queries.
+
+=item countDocs
+
+Returns the total number of documents in the database.
 
 =item docExists $ID, $REV?
 

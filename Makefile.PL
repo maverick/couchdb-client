@@ -16,6 +16,7 @@ requires 'LWP::UserAgent';
 requires 'HTTP::Request';
 requires 'URI::Escape';
 requires 'MIME::Base64';
+requires 'Try::Tiny';
 
 # we need a JSON module that isn't Syck (no UTF-8 support makes it useless)
 sub check_json () {

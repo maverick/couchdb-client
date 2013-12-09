@@ -11,7 +11,7 @@ author 'Maverick Edwards <maverick @t smurfbane d.t org>';
 resources 'repository' => 'git://github.com/maverick/couchdb-client.git';
 resources 'homepage'   => 'http://github.com/maverick/couchdb-client';
 
-requires 'JSON::Any' => '1.17';
+requires 'JSON::Any' => '1.31';
 requires 'LWP::UserAgent';
 requires 'HTTP::Request';
 requires 'URI::Escape';

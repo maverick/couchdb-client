@@ -6,7 +6,7 @@ use warnings;
 
 our $VERSION = '0.09';
 
-use JSON::Any       qw(XS JSON DWIW);
+use JSON::Any       qw(CPANEL XS JSON DWIW);
 use LWP::UserAgent  qw();
 use HTTP::Request   qw();
 use Encode          qw(encode);

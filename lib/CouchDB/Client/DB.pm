@@ -79,7 +79,7 @@ sub replicate {
 		confess("Either source or target is required.");
 	}
 
-	my @flags = ('continuous');
+	my @flags = ('continuous', 'cancel');
 
 	my ($M,$m,undef) = split(/\./,$self->{client}->serverInfo()->{version});
 	if ($m > 10) {
@@ -356,6 +356,9 @@ Either C<target> or C<source> is required; both can't be used at the same time.
 By default, replication is a one time event.  New modifications to the origin database do not automatically
 appear in the replicated database.  Setting C<continuous> to a true value will cause new changes in
 the origin database to be reflected in the replicated one.
+
+You may cancel a previously created replication by setting C<cancel> to 'true'. If the replication does
+not already exist, C<replicate> will die with the corresponding HTTP message (e.g. '404 Object Not Found').
 
 Note: Support for the C<create_target> flag (which was added after version 0.10) is included, but untested.
 

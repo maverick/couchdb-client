@@ -89,7 +89,7 @@ my $DB = $C->newDB('blah');
 	$c = CouchDB::Client->new(scheme => 'https', host => 'example.org', port => '9000');
 	ok $c && $c->{uri} eq 'https://example.org:9000/', 'URI by fragments';
 	$c = CouchDB::Client->new(json => JSON::Any->new, ua => LWP::UserAgent->new);
-	ok $c && $c->{json} && $c->{ua}, 'helper objects';
+	ok $c && $c->{json}, 'helper objects';
 
 	# bad address
 	$c = CouchDB::Client->new(scheme => 'https');

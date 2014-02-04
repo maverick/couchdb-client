@@ -10,6 +10,7 @@ use HTTP::Request   qw();
 use URI::Escape     qw(uri_escape_utf8);
 use MIME::Base64    qw(encode_base64);
 use Carp            qw(confess);
+use CouchDB::Curl	qw(Curl);
 
 sub new {
 	my $class = shift;
@@ -161,11 +162,17 @@ sub fetchAttachment {
 	my $attName = shift;
 
 	confess("No such attachment: '$attName'") unless exists $self->{attachments}->{$attName};
-	my $res = $self->{db}->{client}->{ua}->request(
-		HTTP::Request->new('GET', $self->{db}->{client}->uriForPath($self->uriName . '/' . uri_escape_utf8($attName)))
-	);
-	return $res->content if $res->is_success;
-	confess("Object not found: $res->{msg}");
+	my ( $method, $uri, $body, $headers, $query ) = @_;
+
+	my ($ret, $res);
+	eval { $res = Curl('GET', $self->{db}->{client}->uriForPath($self->uriName . '/' . uri_escape_utf8($attName)))};
+	if (my $e = HTTP::Exception->caught) {
+        $ret->{status} = $e->code;
+        $ret->{msg} = $e->status_message;
+		$ret->{success} = 0;
+    }
+	return $res unless $ret->{success};
+	confess("Object not found: $ret->{msg}");
 }
 
 sub addAttachment {

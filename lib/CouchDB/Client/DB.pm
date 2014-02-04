@@ -243,7 +243,7 @@ sub fixViewArgs {
 				$args{$k} = $self->{client}->{json}->encode($args{$k});
 			}
 			else {
-                                unless ($args{$k} =~ /^\d+(?:\.\d+)*$/s) {
+                                unless ($args{$k} =~ /^\d+(?:\.){0,1}\d*$/s) {
                                         $args{$k} = '"' . $args{$k} . '"';
                                 }
 			}

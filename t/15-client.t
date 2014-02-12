@@ -21,7 +21,7 @@ if($cdb->testConnection) {
 		plan skip_all => "Requires CouchDB version 0.8.0 or better; running $v";
 	}
 	else {
-		plan tests => 77;
+		plan tests => 80;
 	}
 }
 else {
@@ -150,11 +150,19 @@ ok $DB, 'DB create';
 
 # list Design Docs
 {
+    my $d1 = $DB->newDoc('test');
+    $d1->create;
+    my $d2 = $DB->newDoc('_design/test');
+    $d2->create;
 	my $docs = $DB->listDesignDocs;
 	ok ref($docs) eq 'ARRAY', 'listDesignDocs at least returns a list of something';
 	my $docs2 = $DB->listDesignDocIdRevs;
 	ok ref($docs2) eq 'ARRAY', 'listDesignDocIdRevs at least returns a list of something';
 	ok @$docs == @$docs2, 'listDesignDocIdRevs and listDesignDocs return the same number of items';
+	ok @$docs > 0, 'listDesignDocs returned more than zero items';
+	ok ((grep {$_->{id} !~ /^_design/} @$docs) == 0, 'listDesignDocs returned only design docs');
+	$d1->delete;
+	$d2->delete;
 }
 
 # new Design Doc & exists
@@ -365,6 +373,16 @@ my $REP_DB;
 		eval {$rep_doc->retrieve};
 		ok $rep_doc->data->{field3} eq "updated again" , "updating the original changes the replicated one";
 	}
+}
+
+
+### Test for numeric id bug
+
+{
+    my $numeric_id_doc = $DB->newDoc(17, undef, {some_data => 4711});
+    eval {$numeric_id_doc->create};
+    ok($numeric_id_doc && !$@, 'doc with numeric id created');
+    eval {$numeric_id_doc->delete}; # cleanup
 }
 
 ### --- THE CLEANUP AT THE END

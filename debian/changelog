@@ -1,0 +1,5 @@
+libcouchdb-client-perl (0.10-1) trusty; urgency=medium
+
+  * Packaging.
+
+ -- calle <calle@trettontio>  Wed, 12 Feb 2014 15:58:37 +0100

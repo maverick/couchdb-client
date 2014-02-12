@@ -15,7 +15,7 @@ use LWP::UserAgent;
 
 my $cdb = CouchDB::Client->new( uri => $ENV{COUCHDB_CLIENT_URI} || 'http://localhost:5984/' );
 if($cdb->testConnection) {
-	plan tests => 14;
+	plan tests => 22;
 }
 else {
 	plan skip_all => 'Could not connect to CouchDB, skipping.';
@@ -36,14 +36,16 @@ my $DB = $C->newDB('blah');
 		endkey   => 'foo',
 		descending => 1,
 		update => 1,
-		keeps => 'me correctly'
+		keeps => 'me correctly',
+		group => 1,
 	);
 
 	is_deeply(\%encoded, {
 		startkey => '42',
 		endkey => '"foo"',
 		descending => 'true',
-		keeps => 'me correctly'
+		keeps => 'me correctly',
+		group => 'true',
 	}, "fixViewArgs works as expected");
 
 	%encoded = $DB->fixViewArgs(descending => 0, update => 0);
@@ -58,6 +60,37 @@ my $DB = $C->newDB('blah');
 	# differences in the various json encoders.
 	ok($encoded{key} =~ /^\s*\[\s*['"]one['"]\s*,\s*['"]two['"]\s*\]\s*$/,      "Array encode works");
 	ok($encoded{startkey} =~ /^\s*\{['"]?key['"]?\s*:\s*['"]value['"]\s*}\s*$/, "Hash encode works");
+
+}
+
+# test _is_currently_numeric
+{
+	# bare number not assigned to a scalar
+	is($DB->_is_currently_numeric(10),1,"bare number is numeric");
+
+	# bare string
+	is($DB->_is_currently_numeric("string"),0,"bare string is not numeric");
+
+	my $int = 12;
+	is($DB->_is_currently_numeric($int),1,"int scalar is numeric");
+
+	$int = ''.$int;
+	is($DB->_is_currently_numeric($int),0,"int is not numeric after string concatination");
+
+	# interesting gotcha.  ++ for some reason does *NOT* make it treated like a number again.
+	$int += 0;
+	is($DB->_is_currently_numeric($int),1,"int is numeric again after += 0");
+
+	my $float = 12.34;
+	is($DB->_is_currently_numeric($float),1,"floating point scalar is numeric");
+
+	# still just numbers, but I treated it like a string
+	$float .= '5';
+	is($DB->_is_currently_numeric($float),0,"float is not numeric after string concatination");
+
+	# treated it like a number again
+	$float++;
+	is($DB->_is_currently_numeric($float),1,"float is numeric again after ++");
 }
 
 ### DESIGN DOC

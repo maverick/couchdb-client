@@ -1,4 +1,3 @@
-
 package CouchDB::Client::DB;
 
 use strict;
@@ -10,6 +9,9 @@ use Carp        qw(confess);
 use URI::Escape qw(uri_escape_utf8);
 use CouchDB::Client::Doc;
 use CouchDB::Client::DesignDoc;
+use Try::Tiny;
+
+use B qw[svref_2object SVf_IOK SVf_NOK];
 
 sub new {
 	my $class = shift;
@@ -18,7 +20,9 @@ sub new {
 	$opt{name}   || confess "CouchDB database requires a name.";
 	$opt{client} || confess "CouchDB database requires a client.";
 
-	return bless \%opt, $class;
+	my $self = bless \%opt, $class;
+
+    return $self;
 }
 
 sub validName {
@@ -129,15 +133,30 @@ sub listDocs {
 	return [ map { $self->newDoc($_->{id}, $_->{rev}) } @{$self->listDocIdRevs(%args)} ];
 }
 
+sub countDocs {
+    my $self = shift;
+    my $qs = $self->argsToQuery(limit => 0);
+	my $res = $self->{client}->req('GET', $self->uriName . '/_all_docs' . $qs);
+	confess("Connection error: $res->{msg}") unless $res->{success};
+
+	return $res->{json}{total_rows};
+}
+
 sub docExists {
 	my $self = shift;
 	my $id = shift;
 	my $rev = shift;
-	if ($rev) {
-		return (grep { $_->{id} eq $id and $_->{rev} eq $rev } @{$self->listDocIdRevs}) ? 1 : 0;
-	}
-	else {
-		return (grep { $_->{id} eq $id } @{$self->listDocIdRevs}) ? 1 : 0;
+	my $doc = $self->newDoc($id, $rev);
+	eval {
+	    $doc->retrieve;
+	};
+	my $err = $@;
+	if(!$err) {
+	    return 1;
+	} elsif($err =~ /Object not found/) {
+	    return 0;
+	} else {
+	    die $err;
 	}
 }
 
@@ -152,7 +171,9 @@ sub newDesignDoc {
 sub listDesignDocIdRevs {
 	my $self = shift;
 	my %args = @_;
-	return [grep { $_->{id} =~ m{^_design/} } @{$self->listDocIdRevs(%args)}];
+	$args{startkey} = '_design';
+	$args{endkey} = '_design0';
+	return [@{$self->listDocIdRevs(%args)}];
 }
 
 sub listDesignDocs {
@@ -224,6 +245,40 @@ sub bulkDelete {
 	return $res->{json} if $res->{success};
 }
 
+sub bulkGet {
+    my $self = shift;
+    my $ids = shift;
+    my @id = map {"$_"} @$ids;
+
+    my $res = $self->{client}->req('POST', $self->uriName . '/_all_docs?include_docs=true', {keys => \@id});
+    confess("Connection error: " . $res->{msg}) unless $res->{success};
+    $res = $res->{json}{rows};
+
+    return {map {$_->{key} => $_->{doc}} @$res};
+}
+
+sub _is_currently_numeric {
+    # Get a B::-type object from whatever it is
+    my $ref  = svref_2object(\$_[1]);
+    my $type = ref($ref);
+
+    # It's a pure numeric value
+    return 1 if ($type eq 'B::NV' or $type eq 'B::IV');
+
+    # It's a pure string value.
+    return 0 if $type eq 'B::PV';
+
+    # It has a current public integer value.
+    return 1 if $ref->FLAGS & SVf_IOK;
+
+    # It has a current public float value.
+    return 1 if $ref->FLAGS & SVf_NOK;
+
+    # It's none of the above, so call it not numeric (might still be, due to
+    # magic).
+    return 0;
+}
+
 # from docs
 # key=keyvalue
 # startkey=keyvalue
@@ -233,6 +288,7 @@ sub bulkDelete {
 # update=false
 # descending=true
 # skip=rows to skip
+# group=do grouping for reducing views
 sub fixViewArgs {
 	my $self = shift;
 	my %args = @_;
@@ -243,12 +299,12 @@ sub fixViewArgs {
 				$args{$k} = $self->{client}->{json}->encode($args{$k});
 			}
 			else {
-                                unless ($args{$k} =~ /^\d+(?:\.\d+)*$/s) {
+                                unless ($self->_is_currently_numeric($args{$k})) {
                                         $args{$k} = '"' . $args{$k} . '"';
                                 }
 			}
 		}
-		elsif ($k eq 'descending') {
+		elsif ($k eq 'descending' or $k eq 'group') {
 			if ($args{$k}) {
 				$args{$k} = 'true';
 			}
@@ -376,6 +432,10 @@ of arguments matching those understood by CouchDB queries.
 The same as above, but returns an arrayref of C<CouchDB::Client::Doc> objects.
 Takes an optional hash of arguments matching those understood by CouchDB queries.
 
+=item countDocs
+
+Returns the total number of documents in the database.
+
 =item docExists $ID, $REV?
 
 Takes an ID and an optional revision and returns true if there is a document with that ID
@@ -418,6 +478,13 @@ upon failure.
 Same as above but performs mass deletion of documents. Note that using bulkStore you could
 also obtain the same effect by setting a C<_deleted> field to true on your objects but
 that is not recommended as fields that begin with an underscore are reserved by CouchDB.
+
+=item bulkGet \@IDS
+
+Retrieve a large number of documents with one call to the database. The one
+argument should be a reference to a list of document ids. It will return a
+reference to a hash, where the keys are the given ids and the values are the
+corresponding L<CouchDB::Client::Doc> objects or C<undefined>.
 
 =item uriName
 

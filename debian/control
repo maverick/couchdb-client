@@ -1,0 +1,15 @@
+Source: libcouchdb-client-perl
+Section: perl
+Priority: optional
+Build-Depends: debhelper (>= 7.0.50~)
+Build-Depends-Indep: libmodule-install-perl,libjson-any-perl,libjson-xs-perl,libtry-tiny-perl,libwww-perl,liburi-perl
+Maintainer: Calle Dybedahl <calle@init.se>
+Standards-Version: 3.9.3
+Homepage: https://github.com/cdybedahl/couchdb-client
+
+Package: libcouchdb-client-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends},libjson-any-perl,libjson-xs-perl,libtry-tiny-perl,libwww-perl,liburi-perl
+Description: Client for talking to CouchDB databases.
+ This packaging is a patched version, not the one on CPAN.
+ .

@@ -85,6 +85,7 @@ sub req {
 		$content = encode('utf-8', $self->{json}->encode($content));
         $headers = HTTP::Headers->new('Content-Type' => 'application/json');
 	}
+	$self->{ua}->proxy('http', $ENV{'http_proxy'}) if $ENV{'http_proxy'};
 	my $res = $self->{ua}->request( HTTP::Request->new($meth, $self->uriForPath($path), $headers, $content) );
 	my $ret = {
 		status  => $res->code,

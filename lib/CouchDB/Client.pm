@@ -4,7 +4,7 @@ package CouchDB::Client;
 use strict;
 use warnings;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use JSON::Any       qw(XS JSON DWIW);
 use LWP::UserAgent  qw();
@@ -83,8 +83,11 @@ sub req {
 
 	if (ref $content) {
 		$content = encode('utf-8', $self->{json}->encode($content));
-        $headers = HTTP::Headers->new('Content-Type' => 'application/json');
+                $headers = HTTP::Headers->new('Content-Type' => 'application/json');
 	}
+        else {
+                $headers = HTTP::Headers->new('Content-Length' => 0);
+        }
 	my $res = $self->{ua}->request( HTTP::Request->new($meth, $self->uriForPath($path), $headers, $content) );
 	my $ret = {
 		status  => $res->code,
